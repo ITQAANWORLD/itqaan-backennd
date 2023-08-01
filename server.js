@@ -9,9 +9,10 @@ const paymentRoutes = require('./src/routes/payments');
 const serviceRoutes = require('./src/routes/services');
 const dialASandaRoutes = require('./src/routes/dial_a_sanda');
 const cashWaqfRoutes = require('./src/routes/cash_waqf');
-const cashSadaqahRoutes = require('./src/routes/cash_sadaqah');
+const cashSadaqahIndividualRoutes = require('./src/routes/cash_sadaqah_individual');
+const cashSadaqahInstitutionRoutes = require('./src/routes/cash_sadaqah_institution');
 const cashZakaatRoutes = require('./src/routes/cash_zakaat');
-const loggerRoutes = require('./src/common/logger');
+const logger = require('./src/common/logger');
 
 const PORT = process.env.PORT || 3000;
 
@@ -33,9 +34,10 @@ app.use('/dial_a_sanda', dialASandaRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/mpesa', mpesaRoutes);
 app.use('/cash_waqf', cashWaqfRoutes);
-app.use('/cash_sadaqah', cashSadaqahRoutes);
+app.use('/cash_sadaqah/individual', cashSadaqahIndividualRoutes);
+app.use('/cash_sadaqah/institution', cashSadaqahInstitutionRoutes);
 app.use('/cash_zakaat', cashZakaatRoutes);
-app.use('/logger', loggerRoutes);
+//app.use('/logger', loggerRoutes);
 app.use('/auth', authenticationRoutes);
 
 app.get('/', (req, res) => {

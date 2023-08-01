@@ -30,4 +30,17 @@ router.post('/async', async (req,res) => {
     
 });
 
-module.exports = router;
+async function logFile(message) {
+    let filename = './logs/log.txt';
+   // let content = JSON.stringify(req.body) + '\n'
+   let content = new Date() + "\t"+ message + '\n';
+    try {
+        await fsp.appendFile(filename,content);
+    } catch (err) {
+        console.log(err)
+    } finally {
+        // console.log('Processed')
+    }
+}
+
+module.exports = logFile;

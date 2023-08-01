@@ -2,49 +2,102 @@ const express = require('express')
 const Joi = require('joi');
 const Mpesa = require('mpesa-api').Mpesa
 const pool = require('../models/dbconfig');
+const mpesa = require('./mpesa');
 
 const router = express.Router();
 
 // middleware
 router.use(serviceMiddleware);
 
-const payment_type_id = 1
-const service_id = 3
 
-router.get('/', (req,res) => {
-    pool.getConnection((err,connection) => {
-        if(err) throw err;
-        connection.query('SELECT * FROM services where id = ?', [service_id] , (error,rows) => {
-            if(error) throw error;
+const SERVICE_ID = 3
+
+router.get('/', async (req,res) => {
+    let searchQuery = req.query.search
+    let limitQuery = parseInt(req.query.limit) 
+    let offsetQuery = parseInt(req.query.offset) 
+
+    
+    let sql = 'SELECT * FROM institution_cash_waqf ';
+    let sqlParams = [];
+    if (typeof searchQuery == 'string') {
+        sql = sql + ` where name LIKE ? `
+        sqlParams.push(`%${searchQuery}%`)
+    }
+
+    if(!isNaN(offsetQuery) && !isNaN(limitQuery) ) {
+        sql = sql + ` LIMIT ?,? `
+        sqlParams.push(offsetQuery,limitQuery)
+    }
+
+    const connection = await pool.getConnection();
+
+    try {
+        
+        const query1 = await connection.query('SELECT * FROM services where id = ?', [SERVICE_ID]);
+
+        const service = query1[0];
+
+        //if(query1[0].insertId < 1) { throw 'Institution Inserted id ' + query1[0].insertId;}
+
+        // const query2 = await connection.query(sql, sqlParams );
+
+        // const institutions = query2[0];
+        // service[0].institutions = institutions;
+
+        // console.log(institutions + '\n' + sql)
+
+        return res.json({
+            "status" : "Success",
+            "message" : "Fetched successfully", 
+            "data" : service
+            });
+        
+    } catch( ex ) {
+        console.error(ex)
+        logger(`Error ${ex.message} ${ex.stack} \n` );
+
+        return res.json({
+            "status" : "Error",
+            "message" : "Failed to fetch institution ",
+        });
+    } finally {
+        connection.release();
+    }
+
+    // pool.getConnection((err,connection) => {
+    //     if(err) throw err;
+    //     connection.query('SELECT * FROM services where id = ?', [SERVICE_ID] , (error,rows) => {
+    //         if(error) throw error;
             
-            if(rows.length > 0) {
-                 res.json({
-                    "status" : "Success",
-                    "message" : "log successful"  ,
-                    "data" : rows,
-                   });
+    //         if(rows.length > 0) {
+    //              res.json({
+    //                 "status" : "Success",
+    //                 "message" : "log successful"  ,
+    //                 "data" : rows,
+    //                });
                 
                 
-            } else {
-                 res.json({
-                    "status" : "Error",
-                    "message" : "Failed to fetch data ",
-                   });
-            }
+    //         } else {
+    //              res.json({
+    //                 "status" : "Error",
+    //                 "message" : "Failed to fetch data ",
+    //                });
+    //         }
             
-            connection.release();
-            return res;
-        })
-    })
+    //         connection.release();
+    //         return res;
+    //     })
+    // })
 });
 
-router.post('/payment', (req,res) => {
+router.post('/payment', async (req,res) => {
     const schema = Joi.object().keys({
-        amount : Joi.string().required().min(2).max(150),
+        amount : Joi.number().positive().precision(2).required().min(1).max(999999),
         phone_number : Joi.string().required().min(10).max(12),
     });
     const data = req.body;
-    
+
     const validatedData = schema.validate(data);
     if(validatedData.error) {
         return res.status(400).json({
@@ -53,56 +106,47 @@ router.post('/payment', (req,res) => {
            });
     } 
 
-    pool.getConnection((err,connection) => {
-        if(err) throw err;
-        connection.query('INSERT INTO payments(payment_type_id,service_id,institution_id,amount,phone_number) values(?,?,?,?,?)', 
-        [payment_type_id,service_id,'0',validatedData.value.amount,validatedData.value.phone_number] , (error,result) => {
-            if(error) {
-                console.error(error);
-                return res.json({
-                    "status" : "Error",
-                    "message" : "Request failed",
-                   });
-            };
+    const connection = await pool.getConnection();
 
-            console.log("payment id "+ result.insertId)
-            connection.release();
+    try {
+        await connection.beginTransaction();
 
-            const credentials = {
-                clientKey: process.env.MPESA_CONSUMER_KEY,
-                clientSecret: process.env.MPESA_CONSUMER_SECRET,
-                initiatorPassword: process.env.MPESA_INITIATOR_PASSWORD,
-               // securityCredential: process.env.MPESA_PASSKEY,
-                certificatePath: 'mpesa_certificates/SandboxCertificate.cer'
-            }
-            const mpesa = new Mpesa(credentials,process.env.MPESA_ENVIRONMENT);
+        const payment_type_id = 1
+        const Msisdn = validatedData.value.phone_number
         
-            mpesa.c2bSimulate({
-                    ShortCode: process.env.MPESA_SHORTCODE,
-                    Amount: validatedData.value.amount,
-                    Msisdn: validatedData.value.phone_number,
-                    CommandID: "CustomerBuyGoodsOnline" , //CustomerPayBillOnline
-                   // BillRefNumber: "Bill Reference Number" ,
-                })
-                .then((response) => {
-                                    
-                    return res.json({
-                        "status" : "Success",
-                        "message" : "res " + response
-                       });
-                })
-                .catch((error) => {
-                    console.error(error);
-                    return res.json({
-                        "status" : "Error",
-                        "message" : "res " + error.statusCode + error.data.errorMessage
-                       });
-                });
+        if(Msisdn.startsWith("0") && Msisdn.length == 10){
+            Msisdn = "254" + Msisdn.slice(1,Msisdn.length)
+        } else if (Msisdn.startsWith("254") && Msisdn.length == 12) {
+            console.log("254 format")
+        }
 
-           
-            
-        })
-    })
+        const query1 = await connection.query('INSERT INTO payments(payment_type_id,service_id,institution_id,amount,phone_number) values(?,?,?,?,?)', 
+            [payment_type_id,SERVICE_ID,'0',validatedData.value.amount,validatedData.value.phone_number]);
+
+                //changedRows
+        if(query1[0].insertId < 1) { throw 'Institution inserted id ' + updateId;}
+
+
+        await connection.commit();
+
+        res.json({
+            "status" : "Success",
+            "message" : "Check STK ",
+        });
+        
+    } catch( ex ) {
+        await connection.rollback();
+
+        console.error(ex)
+
+        return res.json({
+            "status" : "Error",
+            "message" : "Failed to update institution ",
+        });
+    } finally{
+        connection.release();
+    }
+    
 });
 
 function serviceMiddleware(req,res,next) {
