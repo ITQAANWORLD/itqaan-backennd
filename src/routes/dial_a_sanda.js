@@ -3,6 +3,7 @@ const Joi = require('joi');
 const Mpesa = require('mpesa-api').Mpesa
 const pool = require('../models/dbconfig');
 const logger = require('../common/logger');
+const mpesa_req = require('../common/mpesa_req');
 
 const router = express.Router();
 
@@ -353,49 +354,56 @@ router.post('/:id/payment', async (req,res) => {
         return res.status(400).json({
             "status" : "Error",
             "message" : "Invalid " + validatedData.error.details[0].message
-           });
+        });
     } 
 
-    const connection = await pool.getConnection();
+    // const connection = await pool.getConnection();
 
-    try {
-        await connection.beginTransaction();
+    // try {
+    //     await connection.beginTransaction();
 
-        const payment_type_id = 1
-        const Msisdn = validatedData.value.phone_number
+    //     const payment_type_id = 1
+    const Msisdn = validatedData.value.phone_number
         
         if(Msisdn.startsWith("0") && Msisdn.length == 10){
             Msisdn = "254" + Msisdn.slice(1,Msisdn.length)
         } else if (Msisdn.startsWith("254") && Msisdn.length == 12) {
             console.log("254 format")
+        } else {
+            return  res.status(400).json({
+                "status" : "Error",
+                "message" : "Phone Number " 
+            });
         }
 
-        const query1 = await connection.query('INSERT INTO payments(payment_type_id,service_id,institution_id,amount,phone_number) values(?,?,?,?,?)', 
-            [payment_type_id,SERVICE_ID,'0',validatedData.value.amount,validatedData.value.phone_number]);
+        mpesa_req(Msisdn, validatedData.value.amount)
 
-                //changedRows
-        if(query1[0].insertId < 1) { throw 'Institution inserted id ' + updateId;}
+    //     const query1 = await connection.query('INSERT INTO payments(payment_type_id,service_id,institution_id,amount,phone_number) values(?,?,?,?,?)', 
+    //         [payment_type_id,SERVICE_ID,'0',validatedData.value.amount,validatedData.value.phone_number]);
+
+    //             //changedRows
+    //     if(query1[0].insertId < 1) { throw 'Institution inserted id ' + updateId;}
 
 
-        await connection.commit();
+    //     await connection.commit();
 
         res.json({
             "status" : "Success",
             "message" : "Check STK ",
         });
         
-    } catch( ex ) {
-        await connection.rollback();
+    // } catch( ex ) {
+    //     await connection.rollback();
 
-        console.error(ex)
+    //     console.error(ex)
 
-        return res.json({
-            "status" : "Error",
-            "message" : "Failed to update institution ",
-        });
-    } finally{
-        connection.release();
-    }
+    //     return res.json({
+    //         "status" : "Error",
+    //         "message" : "Failed to update institution ",
+    //     });
+    // } finally{
+    //     connection.release();
+    // }
 
 });
 

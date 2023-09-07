@@ -29,16 +29,16 @@ app.use(cors({
 }))
 
 //Routes
-app.use('/services',  serviceRoutes);
-app.use('/dial_a_sanda', dialASandaRoutes);
-app.use('/payments', paymentRoutes);
-app.use('/mpesa', mpesaRoutes);
-app.use('/cash_waqf', cashWaqfRoutes);
-app.use('/cash_sadaqah/individual', cashSadaqahIndividualRoutes);
-app.use('/cash_sadaqah/institution', cashSadaqahInstitutionRoutes);
-app.use('/cash_zakaat', cashZakaatRoutes);
+app.use('/services', cors, serviceRoutes);
+app.use('/dial_a_sanda', cors, dialASandaRoutes);
+app.use('/payments', cors, paymentRoutes);
+app.use('/mpesa', cors,mpesaRoutes);
+app.use('/cash_waqf', cors, cashWaqfRoutes);
+app.use('/cash_sadaqah/individual', cors,cashSadaqahIndividualRoutes);
+app.use('/cash_sadaqah/institution',cors, cashSadaqahInstitutionRoutes);
+app.use('/cash_zakaat',cors, cashZakaatRoutes);
 //app.use('/logger', loggerRoutes);
-app.use('/auth', authenticationRoutes);
+app.use('/auth', cors,authenticationRoutes);
 
 app.get('/', (req, res) => {
      res.send("Welcome to itqaan backend ");

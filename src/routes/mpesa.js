@@ -4,6 +4,7 @@ const Joi = require('joi')
 const Mpesa = require('mpesa-api').Mpesa
 const unirest = require('unirest')
 const crypto = require("crypto");
+const logger = require("../common/logger")
 
 const router = express.Router();
 
@@ -117,7 +118,11 @@ router.post('/confirmation',(req,res) => {
 });
 
 router.post('/stkcallback',(req,res) => {
-    
+    logger("STK CALLBACK " + req.body)
+    res.json({
+        ResultCode : 0,
+        ResultDesc : "Accepted"
+    })
 });
 
 

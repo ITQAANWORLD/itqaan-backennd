@@ -28,7 +28,7 @@ const fetchUser = async (arrKeys = [],table,whereClause,arrArgs = []) => {
             
         } else {
             return {
-                "status" : true,
+                "status" : false,
                 "message" : "No records"
                }
         }
