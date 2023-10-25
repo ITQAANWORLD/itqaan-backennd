@@ -13,6 +13,11 @@ const cashSadaqahIndividualRoutes = require('./src/routes/cash_sadaqah_individua
 const cashSadaqahInstitutionRoutes = require('./src/routes/cash_sadaqah_institution');
 const cashZakaatRoutes = require('./src/routes/cash_zakaat');
 const logger = require('./src/common/logger');
+const amadeusRoutes = require('./src/routes/amadeus/amadeus');
+const kcbSTKRoutes = require('./src/routes/kcb/stk');
+const kcbB2CRoutes = require('./src/routes/kcb/b2c');
+const kcbB2BRoutes = require('./src/routes/kcb/b2b');
+const kcbFTRoutes = require('./src/routes/kcb/fund_transfer');
 
 const PORT = process.env.PORT || 3000;
 
@@ -21,6 +26,7 @@ const cert = fs.readFileSync('./mpesa_certificates/cert.pem')
 
 const app = express();
 
+app.use(sm)
 app.use(express.json()) 
 app.use(express.urlencoded({ extended: true })) 
 app.use(cors({
@@ -39,6 +45,11 @@ app.use('/cash_sadaqah/institution',cors, cashSadaqahInstitutionRoutes);
 app.use('/cash_zakaat',cors, cashZakaatRoutes);
 //app.use('/logger', loggerRoutes);
 app.use('/auth', cors,authenticationRoutes);
+app.use('/amadeus', amadeusRoutes);
+app.use('/kcb-stk', kcbSTKRoutes);
+app.use('/kcb-b2c', kcbB2CRoutes);
+app.use('/kcb-b2b', kcbB2BRoutes);
+app.use('/kcb-ft', kcbFTRoutes);
 
 app.get('/', (req, res) => {
      res.send("Welcome to itqaan backend ");
@@ -51,3 +62,8 @@ const server = https.createServer({key : key, cert : cert }, app);
 server.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}`);
 })
+
+function sm(req,res,next) {
+    console.log('Req' + req.method)
+    next()
+}

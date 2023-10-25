@@ -8,6 +8,7 @@ const fs = require("node:fs");
 const buffer = require("node:buffer");
 const constants_1 = require("constants");
 const { time } = require('console');
+const kcb_util = require("../routes/kcb/kcb_util")
 
 
 const environment = process.env.MPESA_ENVIRONMENT;
@@ -126,47 +127,48 @@ async  function registerURL() {
 }
 
 async function stk_request(phoneNumber,amount) {
-    let access_token = await getToken();
-    console.log(access_token)
+    kcb_stk_request(phoneNumber,amount)
+    // let access_token = await getToken();
+    // console.log(access_token)
     
-    // if('access_token' in access_token) {
-    //     return;
-    // }
-    // let securityCredential = await getPassKey();
-    let timestamp = getTimeStamp();
-    let base64String = Buffer.from(`${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`).toString('base64')
+    // // if('access_token' in access_token) {
+    // //     return;
+    // // }
+    // // let securityCredential = await getPassKey();
+    // let timestamp = getTimeStamp();
+    // let base64String = Buffer.from(`${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`).toString('base64')
 
-    const STK_CALLBACK_URL = "https://139.84.233.34:3000/stkcallback";
+    // const STK_CALLBACK_URL = "https://139.84.233.34:3000/stkcallback";
 
-    const payload = {    
-        "BusinessShortCode": process.env.MPESA_SHORTCODE,    
-        "Password": base64String,    
-        "Timestamp":  timestamp,    
-        "TransactionType": "CustomerBuyGoodsOnline",    
-        "Amount": amount,    
-        "PartyA":   phoneNumber,    
-        "PartyB":   process.env.MPESA_SHORTCODE,    
-        "PhoneNumber": phoneNumber,    
-        "CallBackURL": STK_CALLBACK_URL,    
-        "AccountReference":"Test",    
-        "TransactionDesc":"Test"
-     }
+    // const payload = {    
+    //     "BusinessShortCode": process.env.MPESA_SHORTCODE,    
+    //     "Password": base64String,    
+    //     "Timestamp":  timestamp,    
+    //     "TransactionType": "CustomerBuyGoodsOnline",    
+    //     "Amount": amount,    
+    //     "PartyA":   phoneNumber,    
+    //     "PartyB":   process.env.MPESA_SHORTCODE,    
+    //     "PhoneNumber": phoneNumber,    
+    //     "CallBackURL": STK_CALLBACK_URL,    
+    //     "AccountReference":"Test",    
+    //     "TransactionDesc":"Test"
+    //  }
 
-    //  console.log(payload)
+    // //  console.log(payload)
 
-    unirest
-        .post('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest')
-        .headers({'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization' : 'Bearer ' + access_token})
-        .send(payload)
-        .then((response) => {
-            const body = response.body
-            console.log(body.ResponseCode)
-            // if ( Respo)
-        })
+    // unirest
+    //     .post('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest')
+    //     .headers({'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization' : 'Bearer ' + access_token})
+    //     .send(payload)
+    //     .then((response) => {
+    //         const body = response.body
+    //         console.log(body.ResponseCode)
+    //         // if ( Respo)
+    //     })
     
 }
 
-async function saf_req(phoneNumber, amount) {
+async function _saf_req(phoneNumber, amount) {
     const credentials = {
                     clientKey: process.env.MPESA_CONSUMER_KEY,
                     clientSecret: process.env.MPESA_CONSUMER_SECRET,
@@ -202,6 +204,39 @@ async function saf_req(phoneNumber, amount) {
                
 
        
+}
+
+async function kcb_stk_request(phoneNumber, amount) {
+    
+    const payload = {
+        "phoneNumber": phoneNumber,//"254722520441"
+        "amount": amount , // "10"
+        "invoiceNumber": "INV-10122",
+        "sharedShortCode": true,
+        "orgShortCode": "174379",
+        "orgPassKey": "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919",
+        "callbackUrl": "https://http://139.84.233.34/:3000/kcb-stk/callback",
+        "transactionDescription": "school fee payment"
+    }
+
+    const base_url = "https://uat.buni.kcbgroup.com/mm/api/request/1.0.0"
+    const access_token = kcb_util.getKCBToken();
+    const stk_request = await unirest
+                            .post(`${base_url}/stkpush`)
+                            .headers({'Accept': 'application/json', 'Content-Type': 'application/json',
+                            'Authorization' : 'Bearer ' + access_token,
+                            'routeCode' : "207",
+                            "operation" : "STKPush",
+                            "messageId" : "232323_KCBOrg_8875661561" 
+                            })
+                            .send(payload)
+    
+    console.log(stk_request.raw_body)
+    if(stk_request.raw_body.header.statusCode === '0'){
+        return true;
+    } else {
+        return false;
+    }
 }
 
 module.exports = stk_request;

@@ -80,46 +80,6 @@ router.post('/login', async (req,res) => {
     }
 
 
-    // pool.getConnection((err,connection) => {
-    //     if(err) throw err;
-    //     connection.query('SELECT * FROM users WHERE email = ? order by id desc limit 1', [joiResult.value.email] , (error,rows) => {
-    //         if(error) throw error;
-
-    //         connection.release();
-    //         if(rows.length > 0) {
-    //             let user = rows[0];
-    //              bycrpt.compare(joiResult.value.password, user.password, (err, isMatch) => {
-    //                 if(isMatch) {
-    //                     delete user.password
-    //                     delete user.rememberToken
-    //                     delete user.deletedDate
-    //                     delete user.updatedDate
-                        
-    //                     const accessToken = generateAccessToken(user)
-    //                     const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN)
-    //                     return res.json({
-    //                         "status" : "Success",
-    //                         "message" : "log successful"  ,
-    //                         "accessToken" : accessToken,
-    //                         "refreshToken" : refreshToken
-    //                        });
-    //                 } else {
-    //                     return res.json({
-    //                         "status" : "Error",
-    //                         "message" : "Invalid email or password. ",
-    //                        });
-    //                 }
-    //              });
-                
-    //         } else {
-    //             return res.json({
-    //                 "status" : "Error",
-    //                 "message" : "Invalid email or password ",
-    //                });
-    //         }
-            
-    //     })
-    // });
     
 });
 
